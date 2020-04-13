@@ -16,6 +16,7 @@ package github
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -109,6 +110,14 @@ func (c *Client) CreateRelease(ctx context.Context, input *Release) error {
 
 	release, _, err := c.Repositories.CreateRelease(context.TODO(), c.owner, c.repo, req)
 	if err != nil {
+		if githubErrResp, ok := err.(*github.ErrorResponse); ok {
+			for _, githubErr := range githubErrResp.Errors {
+				if githubErr.Field == "tag_name" && githubErr.Code == "already_exists" {
+					fmt.Printf("Release %s already exists\n", input.Name)
+					return nil
+				}
+			}
+		}
 		return err
 	}
 
